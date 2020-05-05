@@ -5,7 +5,7 @@ This Example will show you how to use register_next_step handler.
 
 import telebot
 from telebot import types
-from datetime import datetime
+import datetime
 
 API_TOKEN = '1224093712:AAGMlanq-8WRpDOGoPRXG0TYK4gBcuQeSPQ'
 START_TIME=8
@@ -25,7 +25,7 @@ class Order:
 
 def generate_todays_hours():
     # datetime object containing current date and time
-    now = datetime.now()
+    now = datetime.datetime.now()
     current_hour=int(now.strftime("%H"))
     hours=[]
     for h in range(current_hour,END_TIME+1):
@@ -35,9 +35,7 @@ def generate_todays_hours():
 
 
 def generate_anyday_hours():
-    # datetime object containing current date and time
-    now = datetime.now()
-    current_hour = int(now.strftime("%H"))
+
     hours = []
     for h in range(START_TIME, END_TIME + 1):
         hours.append(str(h))
@@ -79,7 +77,7 @@ def process_day_step(message):
 
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
         if day_text=="Today":
-            order.date = datetime.today()
+            order.date = datetime.date.today()
             markup.add(*generate_todays_hours())
         else:
             order.date = datetime.date.today() + datetime.timedelta(days=1)
