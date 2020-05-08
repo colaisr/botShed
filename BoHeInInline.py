@@ -26,6 +26,11 @@ class Order:
 
 telebot.logger.setLevel(logging.DEBUG)
 
+def add_reset(markup):
+    new_row = []
+    new_row.append(InlineKeyboardButton("התחל מחדש", callback_data="cb_restart"))
+    markup.add(*new_row)
+    return markup
 
 def generate_todays_hours():
     now = datetime.datetime.now()
@@ -84,6 +89,7 @@ def process_name_step(message):
         markup.row_width = 2
         markup.add(InlineKeyboardButton("היום", callback_data="cb_day_today"),
                    InlineKeyboardButton("מחר", callback_data="cb_day_tomorrow"))
+        markup = add_reset(markup)
         msg = bot.reply_to(message, 'איזה יום נוח לך?', reply_markup=markup)
 
     except Exception as e:
@@ -106,7 +112,7 @@ def process_day_step(call):
         order.date = datetime.date.today() + datetime.timedelta(days=1)
         bot.answer_callback_query(call.id, "Tomorrow selected")
         markup = generate_anyday_hours()
-
+    markup = add_reset(markup)
     bot.send_message(chat_id, "איזה שעה ?", reply_markup=markup)
 
 
@@ -132,7 +138,7 @@ def process_hours_step(call):
     order.hours = call.data
 
     markup = generate_minutes()
-
+    markup = add_reset(markup)
     bot.send_message(chat_id, "מתי בדיוק ?", reply_markup=markup)
 
 
@@ -140,7 +146,7 @@ def finalize_the_order(call):
     chat_id = call.from_user.id
     order = user_dict[chat_id]
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("עוד ביקור", callback_data="cb_restart"))
+    markup = add_reset(markup)
     bot.send_message(chat_id,
                      'מגניב !' + order.name + ' היקר!  ' + '\n אנו מחכים לך ב \n' + str(order.date) + ' ' + str(
                          order.hours) + ':' + str(order.minutes), reply_markup=markup)

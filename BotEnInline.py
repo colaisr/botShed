@@ -85,10 +85,18 @@ def process_name_step(message):
         markup.row_width = 2
         markup.add(InlineKeyboardButton("Today", callback_data="cb_day_today"),
                    InlineKeyboardButton("Tomorrow", callback_data="cb_day_tomorrow"))
+        markup = add_reset(markup)
         msg = bot.reply_to(message, 'Which day you prefer ?', reply_markup=markup)
 
     except Exception as e:
         bot.reply_to(message, 'oooops')
+
+
+def add_reset(markup):
+    new_row = []
+    new_row.append(InlineKeyboardButton("Restart", callback_data="cb_restart"))
+    markup.add(*new_row)
+    return markup
 
 
 def process_day_step(call):
@@ -108,6 +116,7 @@ def process_day_step(call):
         bot.answer_callback_query(call.id, "Tomorrow selected")
         markup = generate_anyday_hours()
 
+    markup = add_reset(markup)
     bot.send_message(chat_id, "Which time ?", reply_markup=markup)
 
 
@@ -133,7 +142,7 @@ def process_hours_step(call):
     order.hours = call.data
 
     markup = generate_minutes()
-
+    markup = add_reset(markup)
     bot.send_message(chat_id, "Exactly ?", reply_markup=markup)
 
 
@@ -141,7 +150,7 @@ def finalize_the_order(call):
     chat_id = call.from_user.id
     order = user_dict[chat_id]
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("Restart", callback_data="cb_restart"))
+    markup = add_reset(markup)
     bot.send_message(chat_id, 'Dear : ' + order.name + '\n we will wait You at: \n' + str(order.date) + ' ' + str(
         order.hours) + ':' + str(order.minutes), reply_markup=markup)
 
