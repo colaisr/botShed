@@ -68,9 +68,8 @@ def generate_anyday_hours():
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
     msg = bot.reply_to(message, """\
-Lets schedule a window for You,
-which name to use ?
-""")
+    שלום, מיד נקבע לך חלון, איך אפשר לפנות אליך ?
+    """)
     bot.register_next_step_handler(msg, process_name_step)
 
 
@@ -83,9 +82,9 @@ def process_name_step(message):
 
         markup = InlineKeyboardMarkup()
         markup.row_width = 2
-        markup.add(InlineKeyboardButton("Today", callback_data="cb_day_today"),
-                   InlineKeyboardButton("Tomorrow", callback_data="cb_day_tomorrow"))
-        msg = bot.reply_to(message, 'Which day you prefer ?', reply_markup=markup)
+        markup.add(InlineKeyboardButton("היום", callback_data="cb_day_today"),
+                   InlineKeyboardButton("מחר", callback_data="cb_day_tomorrow"))
+        msg = bot.reply_to(message, 'איזה יום נוח לך?', reply_markup=markup)
 
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -94,9 +93,9 @@ def process_name_step(message):
 def process_day_step(call):
     chat_id = call.from_user.id
     order = user_dict[chat_id]
-    markup = InlineKeyboardMarkup()
 
     call.data = call.data.replace("cb_day_", "")
+    markup = InlineKeyboardMarkup()
     if call.data == "today":
         order.date = datetime.date.today()
         bot.answer_callback_query(call.id, "Today selected")
@@ -108,7 +107,7 @@ def process_day_step(call):
         bot.answer_callback_query(call.id, "Tomorrow selected")
         markup = generate_anyday_hours()
 
-    bot.send_message(chat_id, "Which time ?", reply_markup=markup)
+    bot.send_message(chat_id, "איזה שעה ?", reply_markup=markup)
 
 
 def generate_minutes():
@@ -134,16 +133,17 @@ def process_hours_step(call):
 
     markup = generate_minutes()
 
-    bot.send_message(chat_id, "Exactly ?", reply_markup=markup)
+    bot.send_message(chat_id, "מתי בדיוק ?", reply_markup=markup)
 
 
 def finalize_the_order(call):
     chat_id = call.from_user.id
     order = user_dict[chat_id]
     markup = InlineKeyboardMarkup()
-    markup.add(InlineKeyboardButton("Restart", callback_data="cb_restart"))
-    bot.send_message(chat_id, 'Dear : ' + order.name + '\n we will wait You at: \n' + str(order.date) + ' ' + str(
-        order.hours) + ':' + str(order.minutes), reply_markup=markup)
+    markup.add(InlineKeyboardButton("עוד ביקור", callback_data="cb_restart"))
+    bot.send_message(chat_id,
+                     'מגניב !' + order.name + ' היקר!  ' + '\n אנו מחכים לך ב \n' + str(order.date) + ' ' + str(
+                         order.hours) + ':' + str(order.minutes), reply_markup=markup)
 
 
 def process_minutes_step(call):
@@ -152,6 +152,8 @@ def process_minutes_step(call):
 
     call.data = call.data.replace("cb_minutes_", "")
     order.minutes = call.data
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton("Restart", callback_data="cb_restart"))
 
     finalize_the_order(call)
 
@@ -159,9 +161,8 @@ def process_minutes_step(call):
 def restart_the_flow(call):
     chat_id = call.from_user.id
     msg = bot.send_message(chat_id, """\
-                                    Lets schedule a window for You,
-which name to use ?
-                                """)
+    שלום, מיד נקבע לך חלון, איך אפשר לפנות אליך ?
+    """)
     bot.register_next_step_handler(msg, process_name_step)
 
 
