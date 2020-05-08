@@ -14,7 +14,7 @@ END_TIME = 20
 bot = telebot.TeleBot(API_TOKEN)
 
 user_dict = {}
-
+removeKeyboardFrom = ''
 
 class Order:
     def __init__(self, name):
@@ -22,6 +22,7 @@ class Order:
         self.date = None
         self.hours = None
         self.minutes = None
+        self.phone = None
 
 
 telebot.logger.setLevel(logging.DEBUG)
@@ -87,6 +88,8 @@ def process_name_step(message):
                    InlineKeyboardButton("Tomorrow", callback_data="cb_day_tomorrow"))
         markup = add_reset(markup)
         msg = bot.reply_to(message, 'Which day you prefer ?', reply_markup=markup)
+
+
 
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -162,7 +165,23 @@ def process_minutes_step(call):
     call.data = call.data.replace("cb_minutes_", "")
     order.minutes = call.data
 
-    finalize_the_order(call)
+    markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    markup.add(types.KeyboardButton(text="Send My number", request_contact=True))
+
+    msg = bot.send_message(chat_id, "Please provide Your number", reply_markup=markup)
+
+    bot.register_next_step_handler(msg, summarize_requiest)
+
+
+def summarize_requiest(message):
+    try:
+        chat_id = message.chat.id
+        order = user_dict[chat_id]
+        order.phone = message.contact.phone_number
+
+        finalize_the_order(message)
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
 
 
 def restart_the_flow(call):
