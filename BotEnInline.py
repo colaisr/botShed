@@ -177,7 +177,10 @@ def summarize_requiest(message):
     try:
         chat_id = message.chat.id
         order = user_dict[chat_id]
-        order.phone = message.contact.phone_number
+        if message.contact is None:
+            order.phone = message.text
+        else:
+            order.phone = message.contact.phone_number
 
         finalize_the_order(message)
     except Exception as e:
