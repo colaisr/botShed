@@ -7,6 +7,8 @@ import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+from bot_db import update_stat
+
 API_TOKEN = '1224093712:AAGMlanq-8WRpDOGoPRXG0TYK4gBcuQeSPQ'
 START_TIME = 8
 END_TIME = 20
@@ -19,19 +21,21 @@ user_dict = {}
 class Order:
     def __init__(self, name):
         self.name = name
-        self.date = None
-        self.hours = None
-        self.minutes = None
-        self.phone = None
+        self.date = "None"
+        self.hours = "None"
+        self.minutes = "None"
+        self.phone = "None"
 
 
 telebot.logger.setLevel(logging.DEBUG)
+
 
 def add_reset(markup):
     new_row = []
     new_row.append(InlineKeyboardButton("התחל מחדש", callback_data="cb_restart"))
     markup.add(*new_row)
     return markup
+
 
 def generate_todays_hours():
     now = datetime.datetime.now()
@@ -77,6 +81,7 @@ def send_welcome(message):
     שלום, מיד נקבע לך חלון, איך אפשר לפנות אליך ?
     """)
     bot.register_next_step_handler(msg, process_name_step)
+    update_stat(Order("empty"), message.from_user, True)
 
 
 def process_name_step(message):
@@ -153,7 +158,6 @@ def finalize_the_order(call):
                          order.hours) + ':' + str(order.minutes), reply_markup=markup)
 
 
-
 def process_minutes_step(call):
     chat_id = call.from_user.id
     order = user_dict[chat_id]
@@ -172,7 +176,10 @@ def summarize_requiest(message):
     try:
         chat_id = message.chat.id
         order = user_dict[chat_id]
-        order.phone = message.contact.phone_number
+        if message.contact is None:
+            order.phone = message.text
+        else:
+            order.phone = message.contact.phone_number
         finalize_the_order(message)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -183,6 +190,8 @@ def restart_the_flow(call):
     msg = bot.send_message(chat_id, """\
     שלום, מיד נקבע לך חלון, איך אפשר לפנות אליך ?
     """)
+    update_stat(Order("empty"), call.from_user, True)
+
     bot.register_next_step_handler(msg, process_name_step)
 
 
