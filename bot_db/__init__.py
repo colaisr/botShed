@@ -69,30 +69,58 @@ def validate_order(order):
     return order
 
 
-def update_stat(order, user, new_record=False):
+def update_stat(order, user, new_record=False, close_record=False):
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
+    naive_dt = datetime.now()
     if not orders_table_exist(c):
         create_interactions(c)
         create_orders(c)
 
     if new_record:
         # add order
-        naive_dt = datetime.now()
+
         c.execute("INSERT INTO Orders (Created,Name,Phone,Date,Hours,Minutes) VALUES (?,?,?,?,?,?)",
                   (naive_dt, order.name, order.phone, order.date, order.hours, order.minutes))
         last_order = c.lastrowid
-        # add stat
-
-        # c.execute('SELECT * from Orders')
 
         user = validate_user(user)
         c.execute(
             "INSERT INTO Interactions (Started,Ended,OrderId,UserFirst,UserLast,UserUser,UserTeId) VALUES (?,?,?,?,?,?,?)",
             (naive_dt, "Null", last_order, user.first_name, user.last_name, user.username, user.id))
+    else:
+        # updating
+        # get last interaction for user
+        c.execute(
+            "SELECT * FROM Interactions WHERE UserUser = ? ORDER BY ID DESC LIMIT 1 ",
+            (user.username,))
 
-    # Insert a row of data
-    # c.execute("INSERT INTO file_contents VALUES ('" + order + "','" + user + "')")
+        i = c.fetchone()
+        interact_id = i[0]
+        order_id = i[3]
+
+        # update Order
+        c.execute("UPDATE Orders SET Name=?,Phone=?,Date=?,Hours=?,Minutes=? WHERE OrderId = ?",
+                  (order.name, order.phone, order.date, order.hours, order.minutes, order_id))
+
+    if close_record:
+        # updating
+        # get last interaction for user
+        c.execute(
+            "SELECT * FROM Interactions WHERE UserUser = ? ORDER BY ID DESC LIMIT 1 ",
+            (user.username,))
+
+        i = c.fetchone()
+        interact_id = i[0]
+        order_id = i[3]
+
+        # update Order
+        c.execute("UPDATE Orders SET Name=?,Phone=?,Date=?,Hours=?,Minutes=? WHERE OrderId = ?",
+                  (order.name, order.phone, order.date, order.hours, order.minutes, order_id))
+
+        # update Interaction
+        c.execute("UPDATE Interactions SET Ended=? WHERE ID = ?",
+                  (naive_dt, interact_id))
 
     # Save (commit) the changes
     conn.commit()

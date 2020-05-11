@@ -90,6 +90,7 @@ def process_name_step(message):
         name = message.text
         order = Order(name)
         user_dict[chat_id] = order
+        update_stat(order, message.from_user)
 
         markup = InlineKeyboardMarkup()
         markup.row_width = 2
@@ -120,6 +121,7 @@ def process_day_step(call):
         markup = generate_anyday_hours()
     markup = add_reset(markup)
     bot.send_message(chat_id, "איזה שעה ?", reply_markup=markup)
+    update_stat(order, call.from_user)
 
 
 def generate_minutes():
@@ -146,6 +148,7 @@ def process_hours_step(call):
     markup = generate_minutes()
     markup = add_reset(markup)
     bot.send_message(chat_id, "מתי בדיוק ?", reply_markup=markup)
+    update_stat(order, call.from_user)
 
 
 def finalize_the_order(call):
@@ -156,6 +159,8 @@ def finalize_the_order(call):
     bot.send_message(chat_id,
                      'מגניב !' + order.name + ' היקר!  ' + '\n אנו מחכים לך ב \n' + str(order.date) + ' ' + str(
                          order.hours) + ':' + str(order.minutes), reply_markup=markup)
+
+    update_stat(order, call.from_user, close_record=True)
 
 
 def process_minutes_step(call):
@@ -170,6 +175,7 @@ def process_minutes_step(call):
 
     msg = bot.send_message(chat_id, "מה מספר הטלפון ?", reply_markup=markup)
     bot.register_next_step_handler(msg, summarize_requiest)
+    update_stat(order, call.from_user)
 
 
 def summarize_requiest(message):
