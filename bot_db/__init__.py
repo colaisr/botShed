@@ -1,5 +1,5 @@
-import datetime
 import sqlite3
+from _datetime import datetime
 
 DATABASE = 'botshed.db'
 
@@ -19,8 +19,8 @@ def create_interactions(c):
     # Create table
     c.execute('''CREATE TABLE Interactions
                      (ID INTEGER PRIMARY KEY AUTOINCREMENT,
-                     Started TEXT DEFAULT CURRENT_TIMESTAMP,
-                     Ended TEXT,
+                     Started TIMESTAMP,
+                     Ended TIMESTAMP,
                      OrderID int NOT NULL ,
                      UserFirst TEXT,
                      UserLast TEXT,
@@ -34,7 +34,7 @@ def create_orders(c):
     # Create table
     c.execute('''CREATE TABLE Orders
                      (OrderID INTEGER PRIMARY KEY AUTOINCREMENT,
-                     Created TEXT DEFAULT CURRENT_TIMESTAMP,
+                     Created TIMESTAMP,
                      Name TEXT,
                      Phone TEXT,
                      Date TEXT,
@@ -76,30 +76,20 @@ def update_stat(order, user, new_record=False):
         create_interactions(c)
         create_orders(c)
 
-    current_time = str(datetime.datetime.now())
     if new_record:
         # add order
-
-        c.execute("INSERT INTO Orders (Name,Phone,Date,Hours,Minutes) VALUES (" +
-                  "'" + order.name + "'" +
-                  ",'" + order.phone + "'" +
-                  ",'" + order.date + "'" +
-                  ",'" + order.hours + "'" +
-                  ",'" + order.minutes + "'" +
-                  ")")
+        naive_dt = datetime.now()
+        c.execute("INSERT INTO Orders (Created,Name,Phone,Date,Hours,Minutes) VALUES (?,?,?,?,?,?)",
+                  (naive_dt, order.name, order.phone, order.date, order.hours, order.minutes))
         last_order = c.lastrowid
         # add stat
 
+        # c.execute('SELECT * from Orders')
+
         user = validate_user(user)
         c.execute(
-            "INSERT INTO Interactions (Ended,OrderId,UserFirst,UserLast,UserUser,UserTeId) VALUES (" +
-            "NULL" +
-            "," + str(last_order) +
-            ",'" + user.first_name + "'" +
-            ",'" + user.last_name + "'" +
-            ",'" + user.username + "'" +
-            ",'" + str(user.id) + "'" +
-            ")")
+            "INSERT INTO Interactions (Started,Ended,OrderId,UserFirst,UserLast,UserUser,UserTeId) VALUES (?,?,?,?,?,?,?)",
+            (naive_dt, "Null", last_order, user.first_name, user.last_name, user.username, user.id))
 
     # Insert a row of data
     # c.execute("INSERT INTO file_contents VALUES ('" + order + "','" + user + "')")
