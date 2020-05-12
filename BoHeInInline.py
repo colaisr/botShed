@@ -6,6 +6,7 @@ import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
+from bot_calendar import set_event
 from bot_db import update_stat
 
 API_TOKEN = '1224093712:AAGMlanq-8WRpDOGoPRXG0TYK4gBcuQeSPQ'
@@ -199,6 +200,11 @@ def finalize_the_order(call):
                          order.hours) + ':' + str(order.minutes), reply_markup=markup)
 
     update_stat(order, call.from_user, close_record=True)
+    if UPDATE_CALENDAR:
+        try:
+            set_event(order)
+        except Exception as e:
+            print(e)
 
 
 @bot.callback_query_handler(func=lambda call: True)

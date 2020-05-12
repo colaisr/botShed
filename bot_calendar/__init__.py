@@ -12,35 +12,32 @@ BOT_SERVICE_ID = 'bot-213@botshed.iam.gserviceaccount.com'
 SERVICE_ACCOUNT_FILE = 'bot_cred.json'
 
 
-def set_event():
+def set_event(order):
     # setting service
     creds = service_account.Credentials.from_service_account_file(
         SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 
     service = build('calendar', 'v3', credentials=creds)
 
+    message_text = order.name + " " + order.phone
+    # dat=order.date.strftime("%Y-%M-%D")
+    start = datetime.datetime(order.date.year, order.date.month, order.date.day, int(order.hours), int(order.minutes),
+                              00, 000000)
+    end = start + datetime.timedelta(minutes=15)
+    # dat =dat +"T"+order.hours+":"+order.minutes+":00+03:00"
+
     event = {
-        'summary': 'Google I/O 2015',
-        'location': '800 Howard St., San Francisco, CA 94103',
-        'description': 'A chance to hear more about Google\'s developer products.',
+        'summary': message_text,
+
         'start': {
-            'dateTime': '2020-05-13T09:00:00-07:00',
-            'timeZone': 'Asia/Jerusalem',
+            'dateTime': start.isoformat(),
+            'timeZone': 'Asia/Jerusalem'
         },
         'end': {
-            'dateTime': '2020-05-13T10:00:00-07:00',
-            'timeZone': 'Asia/Jerusalem',
+            'dateTime': end.isoformat(),
+            'timeZone': 'Asia/Jerusalem'
         },
-        'recurrence': [
-            'RRULE:FREQ=DAILY;COUNT=2'
-        ],
-        'reminders': {
-            'useDefault': False,
-            'overrides': [
-                {'method': 'email', 'minutes': 24 * 60},
-                {'method': 'popup', 'minutes': 10},
-            ],
-        },
+
     }
 
     event = service.events().insert(calendarId=CALENDAR_ID, body=event).execute()
