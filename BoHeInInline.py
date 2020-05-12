@@ -1,4 +1,4 @@
-# This example show how to write an inline mode telegram bot use pyTelegramBotAPI.
+import configparser
 import datetime
 import sys
 
@@ -9,10 +9,13 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from bot_calendar import set_event
 from bot_db import update_stat
 
-API_TOKEN = '1224093712:AAGMlanq-8WRpDOGoPRXG0TYK4gBcuQeSPQ'
-START_TIME = 8
-END_TIME = 20
-UPDATE_CALENDAR = True
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+API_TOKEN = config['Telegram']['api_token']
+START_TIME = int(config['Workday']['start'])
+END_TIME = int(config['Workday']['end'])
+UPDATE_CALENDAR = config['Calendar']['update_calendar']
 
 bot = telebot.TeleBot(API_TOKEN)
 

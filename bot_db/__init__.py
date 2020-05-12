@@ -1,7 +1,10 @@
+import configparser
 import sqlite3
 from _datetime import datetime
 
-DATABASE = 'botshed.db'
+config = configparser.ConfigParser()
+config.read('config.ini')
+DATABASE = config['DB']['db_file']
 
 
 def orders_table_exist(c):

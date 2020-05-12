@@ -10,6 +10,7 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 CALENDAR_ID = 'prtpb6825s7lke9gfsharj0dhg@group.calendar.google.com'
 BOT_SERVICE_ID = 'bot-213@botshed.iam.gserviceaccount.com'
 SERVICE_ACCOUNT_FILE = 'bot_cred.json'
+SLOT_SIZE_MIN = 15
 
 
 def set_event(order):
@@ -23,7 +24,7 @@ def set_event(order):
     # dat=order.date.strftime("%Y-%M-%D")
     start = datetime.datetime(order.date.year, order.date.month, order.date.day, int(order.hours), int(order.minutes),
                               00, 000000)
-    end = start + datetime.timedelta(minutes=15)
+    end = start + datetime.timedelta(minutes=SLOT_SIZE_MIN)
     # dat =dat +"T"+order.hours+":"+order.minutes+":00+03:00"
 
     event = {
@@ -70,5 +71,30 @@ def main():
         print(start, event['summary'])
 
 
+def get_empty_slots_for_day(date):
+    try:
+
+        creds = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+        service = build('calendar', 'v3', credentials=creds)
+
+        now = date.isoformat() + 'Z'  # 'Z' indicates UTC time
+        print('Getting all events for today')
+        events_result = service.events().list(calendarId=CALENDAR_ID, timeMin=now,
+                                              singleEvents=True,
+                                              orderBy='startTime').execute()
+        events = events_result.get('items', [])
+
+        if not events:
+            print('No upcoming events found.')
+        for event in events:
+            start = event['start'].get('dateTime', event['start'].get('date'))
+            print(start, event['summary'])
+    except Exception as e:
+        print(e)
+
+
 if __name__ == '__main__':
-    set_event()
+    now = datetime.datetime.now()
+    get_empty_slots_for_day(now)
