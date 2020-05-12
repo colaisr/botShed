@@ -1,0 +1,9 @@
+clientID:
+664896790477-57f2e6ijd29pa7mro8227d778qs4ku2t.apps.googleusercontent.com
+
+clientSecret:
+cYs_Msz_WFh-pQq0ylaaBQEX
+
+
+APIKEY
+AIzaSyCQZG6cjFpdJ49QXVKNoL7Mi3K81RBCMgg

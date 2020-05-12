@@ -1,6 +1,5 @@
 # This example show how to write an inline mode telegram bot use pyTelegramBotAPI.
 import datetime
-import logging
 import sys
 
 import telebot
@@ -12,6 +11,7 @@ from bot_db import update_stat
 API_TOKEN = '1224093712:AAGMlanq-8WRpDOGoPRXG0TYK4gBcuQeSPQ'
 START_TIME = 8
 END_TIME = 20
+UPDATE_CALENDAR = True
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -27,9 +27,7 @@ class Order:
         self.phone = "None"
 
 
-telebot.logger.setLevel(logging.DEBUG)
-
-
+# service functions
 def add_reset(markup):
     new_row = []
     new_row.append(InlineKeyboardButton("התחל מחדש", callback_data="cb_restart"))
@@ -74,16 +72,42 @@ def generate_anyday_hours():
     return markup
 
 
+def generate_minutes():
+    buttons_row = []
+    markup = types.InlineKeyboardMarkup()
+    buttons_row.append(InlineKeyboardButton("00", callback_data="cb_minutes_00"))
+    buttons_row.append(InlineKeyboardButton("15", callback_data="cb_minutes_15"))
+    markup.add(*buttons_row)
+    buttons_row.clear()
+    buttons_row.append(InlineKeyboardButton("30", callback_data="cb_minutes_30"))
+    buttons_row.append(InlineKeyboardButton("45", callback_data="cb_minutes_45"))
+    markup.add(*buttons_row)
+
+    return markup
+
+
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
     msg = bot.reply_to(message, """\
-    שלום, מיד נקבע לך חלון, איך אפשר לפנות אליך ?
+    מייד נזמין לך תור ! מה שמך ?
     """)
     bot.register_next_step_handler(msg, process_name_step)
     update_stat(Order("empty"), message.from_user, True)
 
 
+# on restart
+def restart_the_flow(call):
+    chat_id = call.from_user.id
+    msg = bot.send_message(chat_id, """\
+    מייד נזמין לך תור ! מה שמך ?
+    """)
+    update_stat(Order("empty"), call.from_user, True)
+
+    bot.register_next_step_handler(msg, process_name_step)
+
+
+# steps
 def process_name_step(message):
     try:
         chat_id = message.chat.id
@@ -124,20 +148,6 @@ def process_day_step(call):
     update_stat(order, call.from_user)
 
 
-def generate_minutes():
-    buttons_row = []
-    markup = types.InlineKeyboardMarkup()
-    buttons_row.append(InlineKeyboardButton("00", callback_data="cb_minutes_00"))
-    buttons_row.append(InlineKeyboardButton("15", callback_data="cb_minutes_15"))
-    markup.add(*buttons_row)
-    buttons_row.clear()
-    buttons_row.append(InlineKeyboardButton("30", callback_data="cb_minutes_30"))
-    buttons_row.append(InlineKeyboardButton("45", callback_data="cb_minutes_45"))
-    markup.add(*buttons_row)
-
-    return markup
-
-
 def process_hours_step(call):
     chat_id = call.from_user.id
     order = user_dict[chat_id]
@@ -151,18 +161,6 @@ def process_hours_step(call):
     update_stat(order, call.from_user)
 
 
-def finalize_the_order(call):
-    chat_id = call.from_user.id
-    order = user_dict[chat_id]
-    markup = InlineKeyboardMarkup()
-    markup = add_reset(markup)
-    bot.send_message(chat_id,
-                     'מגניב !' + order.name + ' היקר!  ' + '\n אנו מחכים לך ב \n' + str(order.date) + ' ' + str(
-                         order.hours) + ':' + str(order.minutes), reply_markup=markup)
-
-    update_stat(order, call.from_user, close_record=True)
-
-
 def process_minutes_step(call):
     chat_id = call.from_user.id
     order = user_dict[chat_id]
@@ -174,11 +172,11 @@ def process_minutes_step(call):
     markup.add(types.KeyboardButton(text="שלח מספר שלי", request_contact=True))
 
     msg = bot.send_message(chat_id, "מה מספר הטלפון ?", reply_markup=markup)
-    bot.register_next_step_handler(msg, summarize_requiest)
+    bot.register_next_step_handler(msg, process_phone_step)
     update_stat(order, call.from_user)
 
 
-def summarize_requiest(message):
+def process_phone_step(message):
     try:
         chat_id = message.chat.id
         order = user_dict[chat_id]
@@ -191,14 +189,16 @@ def summarize_requiest(message):
         bot.reply_to(message, 'oooops')
 
 
-def restart_the_flow(call):
+def finalize_the_order(call):
     chat_id = call.from_user.id
-    msg = bot.send_message(chat_id, """\
-    שלום, מיד נקבע לך חלון, איך אפשר לפנות אליך ?
-    """)
-    update_stat(Order("empty"), call.from_user, True)
+    order = user_dict[chat_id]
+    markup = InlineKeyboardMarkup()
+    markup = add_reset(markup)
+    bot.send_message(chat_id,
+                     'מגניב !' + order.name + ' היקר!  ' + '\n אנו מחכים לך ב \n' + str(order.date) + ' ' + str(
+                         order.hours) + ':' + str(order.minutes), reply_markup=markup)
 
-    bot.register_next_step_handler(msg, process_name_step)
+    update_stat(order, call.from_user, close_record=True)
 
 
 @bot.callback_query_handler(func=lambda call: True)
