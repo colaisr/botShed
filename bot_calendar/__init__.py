@@ -9,7 +9,8 @@ from googleapiclient.discovery import build
 config = configparser.ConfigParser()
 config.read('config.ini')
 # If modifying these scopes, delete the file token.pickle.
-SCOPES = config['Calendar']['scopes']
+SCOPES = [config['Calendar']['scopes']]
+
 CALENDAR_ID = config['Calendar']['calendar_id']
 BOT_SERVICE_ID = config['Calendar']['bot_sevice_id']
 SERVICE_ACCOUNT_FILE = config['Calendar']['service_credentials']
@@ -47,6 +48,20 @@ def set_event(order):
     event = service.events().insert(calendarId=CALENDAR_ID, body=event).execute()
 
 
+def update_schedule_for_date(schedule, date):
+    events = get_events_for_date(date)
+
+    for event in events:
+        startF = event['start']['dateTime']
+        startT = startF.split('T')[1]
+        startH = int(startT.split(':')[0])
+        startM = int(startT.split(':')[1])
+        sum = event['summary']
+        schedule[startH][startM] = sum
+
+    return schedule
+
+
 def main():
     """Shows basic usage of the Google Calendar API.
     Prints the start and name of the next 10 events on the user's calendar.
@@ -74,7 +89,7 @@ def main():
         print(start, event['summary'])
 
 
-def get_empty_slots_for_day(date):
+def get_events_for_date(date):
     try:
 
         creds = service_account.Credentials.from_service_account_file(
@@ -82,22 +97,19 @@ def get_empty_slots_for_day(date):
 
         service = build('calendar', 'v3', credentials=creds)
 
-        now = date.isoformat() + 'Z'  # 'Z' indicates UTC time
+        dt = datetime.datetime.combine(date, datetime.datetime.min.time())
+
+        now = dt.isoformat() + 'Z'  # 'Z' indicates UTC time
         print('Getting all events for today')
         events_result = service.events().list(calendarId=CALENDAR_ID, timeMin=now,
                                               singleEvents=True,
                                               orderBy='startTime').execute()
         events = events_result.get('items', [])
-
-        if not events:
-            print('No upcoming events found.')
-        for event in events:
-            start = event['start'].get('dateTime', event['start'].get('date'))
-            print(start, event['summary'])
+        return events
     except Exception as e:
         print(e)
 
 
 if __name__ == '__main__':
     now = datetime.datetime.now()
-    get_empty_slots_for_day(now)
+    main()

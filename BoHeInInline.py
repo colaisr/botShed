@@ -6,7 +6,7 @@ import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from bot_calendar import set_event
+from bot_calendar import set_event, update_schedule_for_date
 from bot_db import update_stat
 
 config = configparser.ConfigParser()
@@ -15,7 +15,9 @@ config.read('config.ini')
 API_TOKEN = config['Telegram']['api_token']
 START_TIME = int(config['Workday']['start'])
 END_TIME = int(config['Workday']['end'])
+SLOT_SIZE = int(config['Workday']['slot_size_min'])
 UPDATE_CALENDAR = config['Calendar']['update_calendar']
+last_updated_schedule = {}
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -39,53 +41,77 @@ def add_reset(markup):
     return markup
 
 
-def generate_todays_hours():
+def generate_empty_schedule():
+    hours = {}
+    for h in range(START_TIME, END_TIME):
+        slots = {}
+        for m in range(0, 60, SLOT_SIZE):
+            slots[m] = ""
+        hours[h] = slots
+    return hours
+
+
+def generate_hours(today=False):
     now = datetime.datetime.now()
     current_hour = int(now.strftime("%H"))
-    hours = []
+    sched = generate_empty_schedule()
+    if UPDATE_CALENDAR:
+        if today:
+            sched = update_schedule_for_date(sched, datetime.date.today())
+        else:
+            tmw = datetime.date.today() + datetime.timedelta(days=1)
+            sched = update_schedule_for_date(sched, tmw)
+
+    min_hour = 0
+    if today:
+        min_hour = current_hour
     i = 0
     buttons_row = []
     markup = types.InlineKeyboardMarkup()
-    for h in range(current_hour, END_TIME + 1):
-        if i % 3 != 0 and i != 0:
-            buttons_row.append(InlineKeyboardButton(h, callback_data="cb_hours_" + str(h)))
-        else:
-            markup.add(*buttons_row)
-            buttons_row.clear()
-            buttons_row.append(InlineKeyboardButton(h, callback_data="cb_hours_" + str(h)))
-        i = i + 1
+
+    for h, m in sched.items():
+        if "" in m.values() and h > min_hour:  # only hours with empty slots
+            if i % 3 != 0 and i != 0:
+                have_empty_slots = True
+                buttons_row.append(InlineKeyboardButton(h, callback_data="cb_hours_" + str(h)))
+            else:
+                markup.add(*buttons_row)
+                buttons_row.clear()
+                buttons_row.append(InlineKeyboardButton(h, callback_data="cb_hours_" + str(h)))
+            i = i + 1
     if len(buttons_row) > 0:
         markup.add(*buttons_row)
     return markup
 
 
-def generate_anyday_hours():
+def generate_minutes(order):
+    sched = generate_empty_schedule()
+    if UPDATE_CALENDAR:
+        sched = update_schedule_for_date(sched, order.date)
+
     i = 0
     buttons_row = []
     markup = types.InlineKeyboardMarkup()
-    for h in range(START_TIME, END_TIME + 1):
-        if i % 3 != 0 and i != 0:
-            buttons_row.append(InlineKeyboardButton(h, callback_data="cb_hours_" + str(h)))
-        else:
-            markup.add(*buttons_row)
-            buttons_row.clear()
-            buttons_row.append(InlineKeyboardButton(h, callback_data="cb_hours_" + str(h)))
-        i = i + 1
+
+    # buttons_row.append(InlineKeyboardButton("00", callback_data="cb_minutes_00"))
+    # buttons_row.append(InlineKeyboardButton("15", callback_data="cb_minutes_15"))
+    # markup.add(*buttons_row)
+    # buttons_row.clear()
+    # buttons_row.append(InlineKeyboardButton("30", callback_data="cb_minutes_30"))
+    # buttons_row.append(InlineKeyboardButton("45", callback_data="cb_minutes_45"))
+    # markup.add(*buttons_row)
+    for m, t in sched[int(order.hours)].items():
+        if t == "":  # only  empty slots
+            if i % 3 != 0 and i != 0:
+
+                buttons_row.append(InlineKeyboardButton(m, callback_data="cb_minutes_" + str(m)))
+            else:
+                markup.add(*buttons_row)
+                buttons_row.clear()
+                buttons_row.append(InlineKeyboardButton(m, callback_data="cb_minutes_" + str(m)))
+            i = i + 1
     if len(buttons_row) > 0:
         markup.add(*buttons_row)
-    return markup
-
-
-def generate_minutes():
-    buttons_row = []
-    markup = types.InlineKeyboardMarkup()
-    buttons_row.append(InlineKeyboardButton("00", callback_data="cb_minutes_00"))
-    buttons_row.append(InlineKeyboardButton("15", callback_data="cb_minutes_15"))
-    markup.add(*buttons_row)
-    buttons_row.clear()
-    buttons_row.append(InlineKeyboardButton("30", callback_data="cb_minutes_30"))
-    buttons_row.append(InlineKeyboardButton("45", callback_data="cb_minutes_45"))
-    markup.add(*buttons_row)
 
     return markup
 
@@ -140,13 +166,13 @@ def process_day_step(call):
     if call.data == "today":
         order.date = datetime.date.today()
         bot.answer_callback_query(call.id, "Today selected")
-        markup = generate_todays_hours()
+        markup = generate_hours(today=True)
 
 
     elif call.data == "tomorrow":
         order.date = datetime.date.today() + datetime.timedelta(days=1)
         bot.answer_callback_query(call.id, "Tomorrow selected")
-        markup = generate_anyday_hours()
+        markup = generate_hours()
     markup = add_reset(markup)
     bot.send_message(chat_id, "איזה שעה ?", reply_markup=markup)
     update_stat(order, call.from_user)
@@ -159,7 +185,7 @@ def process_hours_step(call):
     call.data = call.data.replace("cb_hours_", "")
     order.hours = call.data
 
-    markup = generate_minutes()
+    markup = generate_minutes(order)
     markup = add_reset(markup)
     bot.send_message(chat_id, "מתי בדיוק ?", reply_markup=markup)
     update_stat(order, call.from_user)
@@ -244,3 +270,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print('\nExiting by user request.\n')
         sys.exit(0)
+
+# if __name__ == '__main__':
+#     schedule_for_day=generate_empty_schedule()
+#     print(schedule_for_day)
