@@ -1,16 +1,19 @@
 from __future__ import print_function
 
+import configparser
 import datetime
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
+config = configparser.ConfigParser()
+config.read('config.ini')
 # If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/calendar']
-CALENDAR_ID = 'prtpb6825s7lke9gfsharj0dhg@group.calendar.google.com'
-BOT_SERVICE_ID = 'bot-213@botshed.iam.gserviceaccount.com'
-SERVICE_ACCOUNT_FILE = 'bot_cred.json'
-SLOT_SIZE_MIN = 15
+SCOPES = config['Calendar']['scopes']
+CALENDAR_ID = config['Calendar']['calendar_id']
+BOT_SERVICE_ID = config['Calendar']['bot_sevice_id']
+SERVICE_ACCOUNT_FILE = config['Calendar']['service_credentials']
+SLOT_SIZE_MIN = int(config['Workday']['slot_size_min'])
 
 
 def set_event(order):
