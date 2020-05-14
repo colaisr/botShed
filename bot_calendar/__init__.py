@@ -100,7 +100,6 @@ def get_events_for_date(date):
         dt = datetime.datetime.combine(date, datetime.datetime.min.time())
 
         now = dt.isoformat() + 'Z'  # 'Z' indicates UTC time
-        print('Getting all events for today')
         events_result = service.events().list(calendarId=CALENDAR_ID, timeMin=now,
                                               singleEvents=True,
                                               orderBy='startTime').execute()

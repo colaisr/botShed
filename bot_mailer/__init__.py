@@ -19,7 +19,6 @@ def send_email(message):
     with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
         server.login(email, password)
         server.sendmail(email, recepient, test)
-    print("email sent")
 
 
 if __name__ == '__main__':
