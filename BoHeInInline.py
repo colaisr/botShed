@@ -8,7 +8,6 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot_calendar import set_event, update_schedule_for_date
 from bot_db import update_stat
-from bot_mailer import send_email
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -235,7 +234,7 @@ def finalize_the_order(call):
 
     email_message = "New order for " + order.name + " Tel: " + order.phone + " at " + str(order.date) + " " + str(
         order.hours) + ":" + str(order.minutes)
-    send_email(email_message)
+    # send_email(email_message)
     if UPDATE_CALENDAR:
         try:
             set_event(order)

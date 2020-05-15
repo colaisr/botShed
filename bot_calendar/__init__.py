@@ -72,7 +72,6 @@ def main():
 
     service = build('calendar', 'v3', credentials=creds)
 
-    s = service.calendars().get(calendarId='botshed.test@gmail.com')
 
     # Call the Calendar API
     now = datetime.datetime.utcnow().isoformat() + 'Z'  # 'Z' indicates UTC time
