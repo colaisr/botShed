@@ -18,6 +18,7 @@ END_TIME = int(config['Workday']['end'])
 SLOT_SIZE = int(config['Workday']['slot_size_min'])
 UPDATE_CALENDAR = config['Calendar']['update_calendar']
 last_updated_schedule = {}
+OWNER_ID = 0
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -127,6 +128,35 @@ def send_welcome(message):
     bot.register_next_step_handler(msg, process_name_step)
 
 
+# Handle '/iammaster
+@bot.message_handler(commands=['iammaster'])
+def send_welcome(message):
+    update_stat(Order("empty"), message.from_user, True)
+
+    msg = bot.reply_to(message, """\
+    אז אתה בעל הבית ?  yes/clear
+    """)
+    bot.register_next_step_handler(msg, process_master_set)
+
+
+def process_master_set(message):
+    try:
+        chat_id = message.chat.id
+        name = message.text
+        user_id = message.chat.id
+        global OWNER_ID
+        if message.text.lower() == 'yes':
+            # global OWNER_ID
+            OWNER_ID = user_id
+            bot.reply_to(message, 'סבבה')
+        else:
+            # global OWNER_ID
+            OWNER_ID = 0
+            bot.reply_to(message, 'ניקיתי')
+
+    except Exception as e:
+        bot.reply_to(message, 'oooops')
+
 
 # on restart
 def restart_the_flow(call):
@@ -235,6 +265,8 @@ def finalize_the_order(call):
     email_message = "New order for " + order.name + " Tel: " + order.phone + " at " + str(order.date) + " " + str(
         order.hours) + ":" + str(order.minutes)
     # send_email(email_message)
+    if OWNER_ID != 0:
+        bot.send_message(OWNER_ID, email_message)
     if UPDATE_CALENDAR:
         try:
             set_event(order)
