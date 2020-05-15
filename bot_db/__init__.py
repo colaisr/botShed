@@ -95,8 +95,8 @@ def update_stat(order, user, new_record=False, close_record=False):
         # updating
         # get last interaction for user
         c.execute(
-            "SELECT * FROM Interactions WHERE UserUser = ? ORDER BY ID DESC LIMIT 1 ",
-            (user.username,))
+            "SELECT * FROM Interactions WHERE UserTeId = ? ORDER BY ID DESC LIMIT 1 ",
+            (user.id,))
 
         i = c.fetchone()
         interact_id = i[0]
@@ -110,8 +110,8 @@ def update_stat(order, user, new_record=False, close_record=False):
         # updating
         # get last interaction for user
         c.execute(
-            "SELECT * FROM Interactions WHERE UserUser = ? ORDER BY ID DESC LIMIT 1 ",
-            (user.username,))
+            "SELECT * FROM Interactions WHERE UserTeId = ? ORDER BY ID DESC LIMIT 1 ",
+            (user.id,))
 
         i = c.fetchone()
         interact_id = i[0]

@@ -120,11 +120,13 @@ def generate_minutes(order):
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
+    update_stat(Order("empty"), message.from_user, True)
+
     msg = bot.reply_to(message, """\
     מייד נזמין לך תור ! מה שמך ?
     """)
     bot.register_next_step_handler(msg, process_name_step)
-    update_stat(Order("empty"), message.from_user, True)
+
 
 
 # on restart
@@ -225,11 +227,12 @@ def finalize_the_order(call):
     order = user_dict[chat_id]
     markup = InlineKeyboardMarkup()
     markup = add_reset(markup)
+    update_stat(order, call.from_user, close_record=True)
+
     bot.send_message(chat_id,
                      'מגניב !' + order.name + ' היקר!  ' + '\n אנו מחכים לך ב \n' + str(order.date) + ' ' + str(
                          order.hours) + ':' + str(order.minutes), reply_markup=markup)
 
-    update_stat(order, call.from_user, close_record=True)
     email_message = "New order for " + order.name + " Tel: " + order.phone + " at " + str(order.date) + " " + str(
         order.hours) + ":" + str(order.minutes)
     send_email(email_message)
