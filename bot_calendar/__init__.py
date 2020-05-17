@@ -8,8 +8,8 @@ from googleapiclient.discovery import build
 
 config = configparser.ConfigParser()
 config.read('config.ini')
-# If modifying these scopes, delete the file token.pickle.
-SCOPES = [config['Calendar']['scopes']]
+
+SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 
 CALENDAR_ID = config['Calendar']['calendar_id']
 BOT_SERVICE_ID = config['Calendar']['bot_sevice_id']
